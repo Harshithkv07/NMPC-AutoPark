@@ -1,0 +1,31 @@
+<h2><span class="num">1</span>The Whole Project in One Page</h2>
+<p>Read this first. Every presenter should be able to tell this story in one minute, because the professor may ask any of you how your part fits in.</p>
+
+<h3>The Problem</h3>
+<p>Cars such as the Mahindra BE 6 and XEV 9e can already park themselves (Autopark: 12 ultrasonic sensors, perpendicular, angled and parallel bays). A truck with a trailer cannot, and it is the vehicle that needs help most. The reason is physics: a tractor-trailer is two bodies joined at a hitch, and <strong>when it reverses, the hitch angle grows on its own</strong>. A 2° error becomes 60° after 28 m of reversing. If nobody corrects it, the trailer folds against the cab: a <strong>jackknife</strong>.</p>
+
+<h3>What We Built</h3>
+<p>A guidance system that takes a tractor-trailer from the yard gate into a chosen bay while the hitch angle never exceeds 60°. It has four layers:</p>
+<table>
+  <tr><th style="width:24%">Layer</th><th>What it does</th><th style="width:22%">Presented in</th></tr>
+  <tr><td>Vehicle model</td><td>Four numbers describe the rig; four equations say how they change for a given speed and steering</td><td>Part 1 (A), Part 2 (B)</td></tr>
+  <tr><td>Hybrid A* planner</td><td>Searches the yard once and returns a route the truck can actually drive, gate to bay</td><td>Part 3 (C)</td></tr>
+  <tr><td>NMPC controller</td><td>Every 0.25 s, predicts 9.6 s ahead and chooses the steering that follows the route with |ψ| ≤ 60° as a hard limit</td><td>Part 3 (C)</td></tr>
+  <tr><td>Driver guidance</td><td>Turns the controller's output into gear, speed (km/h), steering-wheel turns and distance</td><td>Part 4 (D)</td></tr>
+</table>
+
+<h3>The Result</h3>
+<p>We tested 110 free bays (4 layouts × 6 random fills of parked trucks). All 110 were parked within tolerance, the hitch limit was never broken (worst case 50.1°), and a driver model without hitch awareness jackknifed on all 72 reversing manoeuvres.</p>
+
+<h3>The Chain of Ideas</h3>
+<div class="key box"><span class="tag">THE STORY IN FOUR SENTENCES</span>
+<p>(1) We model the truck as a wheeled robot with four state variables and two inputs. (2) Its kinematics show that reversing is unstable: the hitch angle grows exponentially. (3) So we plan a drivable route with Hybrid A* and follow it with an NMPC that looks ahead and treats the hitch limit as a hard constraint. (4) The result parks every test bay and tells a human driver exactly what to do.</p></div>
+
+<table>
+  <tr><th style="width:18%">Symbol</th><th>Meaning</th><th style="width:20%">Value</th></tr>
+  <tr><td>$x_1, y_1$</td><td>Position of the tractor's rear-axle centre</td><td>metres</td></tr>
+  <tr><td>$\theta_0,\ \theta_1$</td><td>Heading of the tractor, heading of the trailer (from the $x$ axis, anticlockwise positive)</td><td>radians or degrees</td></tr>
+  <tr><td>$\psi = \theta_0 - \theta_1$</td><td>Hitch angle: how far the tractor is turned relative to the trailer</td><td>hard limit 60°</td></tr>
+  <tr><td>$v,\ \delta$</td><td>Speed (negative in reverse), front-wheel steering angle</td><td>$|v| \le 2$ m/s, $|\delta| \le 35°$</td></tr>
+  <tr><td>$L_1,\ L_2,\ d$</td><td>Tractor wheelbase, hitch to trailer axle, hitch ahead of the rear axle</td><td>4 m, 8 m, 0.5 m</td></tr>
+</table>

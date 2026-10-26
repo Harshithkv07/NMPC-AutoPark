@@ -1,0 +1,74 @@
+{
+ "fig_bodies": [
+  7.4,
+  4.9
+ ],
+ "fig_wheel": [
+  5.4,
+  4.2
+ ],
+ "fig_geometry": [
+  7.6,
+  4.5
+ ],
+ "fig_bicycle": [
+  6.0,
+  5.9
+ ],
+ "fig_hitch": [
+  7.2,
+  4.7
+ ],
+ "fig_unstable": [
+  6.6,
+  4.9
+ ],
+ "fig_horizon": [
+  7.2,
+  5.0
+ ],
+ "fig_grid": [
+  4.9,
+  3.15
+ ],
+ "fig_compare": [
+  5.2,
+  3.5
+ ],
+ "g_sketch_steps": [
+  7.2,
+  4.6
+ ],
+ "g_parallel_park": [
+  6.2,
+  2.6
+ ],
+ "g_unit_vectors": [
+  4.6,
+  3.2
+ ],
+ "g_front_wheel": [
+  5.6,
+  2.75
+ ],
+ "g_hold_curve": [
+  5.4,
+  3.3
+ ],
+ "g_reverse_headings": [
+  5.0,
+  3.0
+ ],
+ "g_regulator": [
+  5.2,
+  3.0
+ ],
+ "g_soft_hard": [
+  5.2,
+  3.0
+ ],
+ "g_astar": [
+  4.6,
+  2.96
+ ]
+}

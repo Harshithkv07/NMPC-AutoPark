@@ -1,0 +1,10 @@
+{
+  "name": "final_deck_build",
+  "private": true,
+  "description": "Builds doc/Robotics_Final_Group_B9.pptx",
+  "type": "commonjs",
+  "dependencies": {
+    "jszip": "^3.10.1",
+    "pptxgenjs": "^4.0.1"
+  }
+}

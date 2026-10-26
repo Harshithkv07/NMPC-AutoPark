@@ -2,57 +2,42 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "v2",
+      "name": "v2d2",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "v2/viewer",
+        "v2/v2-design-2/viewer",
         "run",
         "dev"
       ],
-      "port": 5175
+      "port": 5177
     },
     {
-      "name": "v2-demo",
+      "name": "v2d2-demo",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "v2/server.py"
+        "v2/v2-design-2/server.py"
       ],
-      "port": 4175
+      "port": 4177
     },
     {
-      "name": "design-2",
+      "name": "v2d3",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "v1/v1-design-2/viewer",
+        "v2/v2-design-3/viewer",
         "run",
         "dev"
       ],
-      "port": 5174
+      "port": 5179
     },
     {
-      "name": "design-2-demo",
+      "name": "v2d3-demo",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "-m",
-        "http.server",
-        "4174",
-        "--directory",
-        "v1/v1-design-2/viewer/dist"
+        "v2/v2-design-3/server.py"
       ],
-      "port": 4174
-    },
-    {
-      "name": "design-1",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--prefix",
-        "v1/v1-design-1/viewer",
-        "run",
-        "dev"
-      ],
-      "port": 5173
+      "port": 4179
     }
   ]
 }

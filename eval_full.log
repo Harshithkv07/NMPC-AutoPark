@@ -1,0 +1,122 @@
+baselines: 110 scenarios
+  planning (ours): 5/110  (2 s)
+  planning (ours): 10/110  (2 s)
+  planning (ours): 15/110  (2 s)
+  planning (ours): 20/110  (2 s)
+  planning (ours): 25/110  (4 s)
+  planning (ours): 30/110  (22 s)
+  planning (ours): 35/110  (23 s)
+  planning (ours): 40/110  (23 s)
+  planning (ours): 45/110  (23 s)
+  planning (ours): 50/110  (23 s)
+  planning (ours): 55/110  (23 s)
+  planning (ours): 60/110  (23 s)
+  planning (ours): 65/110  (23 s)
+  planning (ours): 70/110  (23 s)
+  planning (ours): 75/110  (23 s)
+  planning (ours): 80/110  (23 s)
+  planning (ours): 85/110  (23 s)
+  planning (ours): 90/110  (23 s)
+  planning (ours): 95/110  (23 s)
+  planning (ours): 100/110  (23 s)
+  planning (ours): 105/110  (23 s)
+  planning (ours): 110/110  (23 s)
+  baselines: 22/440  (37 s)
+  baselines: 44/440  (55 s)
+  baselines: 66/440  (62 s)
+  baselines: 88/440  (73 s)
+  baselines: 110/440  (94 s)
+  baselines: 132/440  (114 s)
+  baselines: 154/440  (130 s)
+  baselines: 176/440  (155 s)
+  baselines: 198/440  (190 s)
+  baselines: 220/440  (197 s)
+  baselines: 242/440  (231 s)
+  baselines: 264/440  (265 s)
+  baselines: 286/440  (295 s)
+  baselines: 308/440  (295 s)
+  baselines: 330/440  (295 s)
+  baselines: 352/440  (295 s)
+  baselines: 374/440  (295 s)
+  baselines: 396/440  (295 s)
+  baselines: 418/440  (295 s)
+  baselines: 440/440  (295 s)
+baselines done in 324 s
+robust: 110 scenarios
+  planning (ours): 5/110  (3 s)
+  planning (ours): 10/110  (4 s)
+  planning (ours): 15/110  (4 s)
+  planning (ours): 20/110  (4 s)
+  planning (ours): 25/110  (6 s)
+  planning (ours): 30/110  (22 s)
+  planning (ours): 35/110  (25 s)
+  planning (ours): 40/110  (25 s)
+  planning (ours): 45/110  (25 s)
+  planning (ours): 50/110  (25 s)
+  planning (ours): 55/110  (25 s)
+  planning (ours): 60/110  (25 s)
+  planning (ours): 65/110  (25 s)
+  planning (ours): 70/110  (25 s)
+  planning (ours): 75/110  (25 s)
+  planning (ours): 80/110  (25 s)
+  planning (ours): 85/110  (25 s)
+  planning (ours): 90/110  (25 s)
+  planning (ours): 95/110  (25 s)
+  planning (ours): 100/110  (25 s)
+  planning (ours): 105/110  (25 s)
+  planning (ours): 110/110  (25 s)
+  robustness: 143/2860  (393 s)
+  robustness: 286/2860  (831 s)
+  robustness: 429/2860  (891 s)
+  robustness: 572/2860  (1298 s)
+  robustness: 715/2860  (1621 s)
+  robustness: 858/2860  (2052 s)
+  robustness: 1001/2860  (2301 s)
+  robustness: 1144/2860  (2361 s)
+  robustness: 1287/2860  (2424 s)
+  robustness: 1430/2860  (2490 s)
+  robustness: 1573/2860  (2490 s)
+  robustness: 1716/2860  (2495 s)
+  robustness: 1859/2860  (2506 s)
+  robustness: 2002/2860  (2516 s)
+  robustness: 2145/2860  (2532 s)
+  robustness: 2288/2860  (2551 s)
+  robustness: 2431/2860  (2561 s)
+  robustness: 2574/2860  (2564 s)
+  robustness: 2717/2860  (2567 s)
+  robustness: 2860/2860  (2570 s)
+robust done in 2596 s
+planner: 110 scenarios
+  planning (ours): 5/110  (4 s)
+  planning (ours): 10/110  (4 s)
+  planning (ours): 15/110  (5 s)
+  planning (ours): 20/110  (5 s)
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\harshithKV\Desktop\Robotics\v2\v2-design-2\sim\evaluate.py", line 340, in <module>
+    SUITES[name]()
+    ~~~~~~~~~~~~^^
+  File "C:\Users\harshithKV\Desktop\Robotics\v2\v2-design-2\sim\evaluate.py", line 203, in suite_planner
+    plans = _plans(scs, v)
+  File "C:\Users\harshithKV\Desktop\Robotics\v2\v2-design-2\sim\evaluate.py", line 165, in _plans
+    return {r[1]: r[3] for r in _pool([("plan", sc, variant) for sc in scs], f"planning ({variant})")}
+                                ~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\harshithKV\Desktop\Robotics\v2\v2-design-2\sim\evaluate.py", line 157, in _pool
+    for i, r in enumerate(ex.map(_task, tasks, chunksize=1), 1):
+                ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Python314\Lib\concurrent\futures\process.py", line 617, in _chain_from_iterable_of_lists
+    for element in iterable:
+                   ^^^^^^^^
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 639, in result_iterator
+    yield _result_or_cancel(fs.pop())
+          ~~~~~~~~~~~~~~~~~^^^^^^^^^^
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 311, in _result_or_cancel
+    return fut.result(timeout)
+           ~~~~~~~~~~^^^^^^^^^
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 450, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Python314\Lib\concurrent\futures\_base.py", line 395, in __get_result
+    raise self._exception
+concurrent.futures.process.BrokenProcessPool: A process in the process pool was terminated abruptly while the future was running or pending.

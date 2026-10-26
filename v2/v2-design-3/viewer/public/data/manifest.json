@@ -1,0 +1,196 @@
+{
+ "layouts": [
+  {
+   "name": "cross",
+   "label": "Cross (90 deg)",
+   "seeds": [
+    {
+     "seed": 0,
+     "file": "cross_0.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 378
+    },
+    {
+     "seed": 1,
+     "file": "cross_1.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 398
+    },
+    {
+     "seed": 2,
+     "file": "cross_2.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 410
+    },
+    {
+     "seed": 3,
+     "file": "cross_3.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 392
+    },
+    {
+     "seed": 4,
+     "file": "cross_4.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 377
+    },
+    {
+     "seed": 5,
+     "file": "cross_5.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 393
+    }
+   ]
+  },
+  {
+   "name": "angled",
+   "label": "Angled (60 deg)",
+   "seeds": [
+    {
+     "seed": 0,
+     "file": "angled_0.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 532
+    },
+    {
+     "seed": 1,
+     "file": "angled_1.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 544
+    },
+    {
+     "seed": 2,
+     "file": "angled_2.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 550
+    },
+    {
+     "seed": 3,
+     "file": "angled_3.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 506
+    },
+    {
+     "seed": 4,
+     "file": "angled_4.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 534
+    },
+    {
+     "seed": 5,
+     "file": "angled_5.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 543
+    }
+   ]
+  },
+  {
+   "name": "parallel",
+   "label": "Parallel",
+   "seeds": [
+    {
+     "seed": 0,
+     "file": "parallel_0.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 833
+    },
+    {
+     "seed": 1,
+     "file": "parallel_1.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 899
+    },
+    {
+     "seed": 2,
+     "file": "parallel_2.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 906
+    },
+    {
+     "seed": 3,
+     "file": "parallel_3.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 764
+    },
+    {
+     "seed": 4,
+     "file": "parallel_4.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 841
+    },
+    {
+     "seed": 5,
+     "file": "parallel_5.json",
+     "free": 4,
+     "ok": 4,
+     "kb": 818
+    }
+   ]
+  },
+  {
+   "name": "tandem",
+   "label": "Tandem (in-line)",
+   "seeds": [
+    {
+     "seed": 0,
+     "file": "tandem_0.json",
+     "free": 6,
+     "ok": 6,
+     "kb": 253
+    },
+    {
+     "seed": 1,
+     "file": "tandem_1.json",
+     "free": 6,
+     "ok": 6,
+     "kb": 259
+    },
+    {
+     "seed": 2,
+     "file": "tandem_2.json",
+     "free": 8,
+     "ok": 8,
+     "kb": 365
+    },
+    {
+     "seed": 3,
+     "file": "tandem_3.json",
+     "free": 6,
+     "ok": 6,
+     "kb": 259
+    },
+    {
+     "seed": 4,
+     "file": "tandem_4.json",
+     "free": 7,
+     "ok": 7,
+     "kb": 308
+    },
+    {
+     "seed": 5,
+     "file": "tandem_5.json",
+     "free": 5,
+     "ok": 5,
+     "kb": 206
+    }
+   ]
+  }
+ ]
+}

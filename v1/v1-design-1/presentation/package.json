@@ -1,9 +1,0 @@
-{
-  "name": "b9-presentation",
-  "private": true,
-  "version": "1.0.0",
-  "type": "commonjs",
-  "dependencies": {
-    "pptxgenjs": "^3.12.0"
-  }
-}
