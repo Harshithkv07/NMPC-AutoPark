@@ -711,7 +711,7 @@ divider(4, "Limitations and Future Scope", "What the system achieves today, what
   card(s, 7.25, TOP + 0.85, SW - M - 7.25, 3.3, BG2);
   fit(s, "app_guided.png", 7.4, TOP + 1.0, SW - M - 7.55, 3.0, { align: "c", valign: "m", alt: "The rig reversing under NMPC guidance in our viewer" });
   s.addNotes(
-    "Offer the live demo: run v2 (run_demo.bat), pick a layout, click a green bay, show the guidance, switch to Unaided on the same bay to show the jackknife, " +
+    "Offer the live demo: run the demo (run_demo.bat), pick a layout, click a green bay, show the guidance, switch to Unaided on the same bay to show the jackknife, " +
     "then switch to Live and press the push button to kick the hitch 10 degrees and watch the NMPC catch it.");
 }
 

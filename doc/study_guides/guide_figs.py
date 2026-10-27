@@ -3,7 +3,7 @@
 Re-draws the deck's figures in the light palette (doc/final_deck_build/figs.py, figs_planner.py) and adds the
 guide-only ones: the hand-drawing sequence, parallel parking, unit vectors, the front-wheel and hitch velocity
 derivations, the hold-steering curve, the reversing heading plot, the hitch regulator and the cost-versus-limit plot.
-Numbers come from the real model (v2/v2-design-3/sim). Run:  python guide_figs.py
+Numbers come from the real model (sim/). Run:  python guide_figs.py
 """
 import json
 import os
@@ -14,7 +14,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 os.environ["FIG_THEME"] = "light"
 os.environ["FIG_OUT"] = os.path.join(HERE, "fig")
 sys.path.insert(0, os.path.join(HERE, "..", "final_deck_build"))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "v2", "v2-design-3"))
+sys.path.insert(0, os.path.join(HERE, "..", ".."))
 
 import numpy as np                                   # noqa: E402
 import figs                                          # noqa: E402

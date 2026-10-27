@@ -1,4 +1,4 @@
-import sys; sys.path.insert(0, r"C:\Users\harshithKV\Desktop\Robotics\v2\v2-design-1")
+import sys; sys.path.insert(0, r"C:\Users\harshithKV\Desktop\Robotics")
 import numpy as np, matplotlib; matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon

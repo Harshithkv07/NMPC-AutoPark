@@ -1,4 +1,4 @@
-"""Planner figures for the dark deck, from the real solver in v2/v2-design-3 (run after figs.py).
+"""Planner figures for the dark deck, from the real solver in the project root (run after figs.py).
 
 img/fig_primitives.png  the ten motion primitives (5 hitch targets x 2 gears) from one pose
 img/fig_path.png        a planned route into a cross-layout bay, with rig footprints along it
@@ -9,7 +9,7 @@ import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(HERE, "..", "..", "v2", "v2-design-3"))
+sys.path.insert(0, os.path.join(HERE, "..", ".."))
 
 import matplotlib
 

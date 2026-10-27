@@ -1,0 +1,27 @@
+{
+  "name": "trailer-guidance-viewer",
+  "private": true,
+  "version": "2.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 5179 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 4180",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "@fontsource/ibm-plex-mono": "^5.3.0",
+    "@fontsource/ibm-plex-sans": "^5.3.0",
+    "@gsap/react": "^2.1.1",
+    "@react-three/drei": "^9.105.0",
+    "@react-three/fiber": "^8.16.8",
+    "gsap": "^3.12.5",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "three": "^0.165.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.3.1"
+  }
+}

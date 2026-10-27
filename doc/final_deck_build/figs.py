@@ -1,7 +1,7 @@
 """Figures and equation images for the final four-part deck (build_deck.js places them).
 
 Every figure is drawn at the size it is placed on the slide, so a 22 pt label here is 22 pt in the deck.
-Geometry and numbers come from the real model: v2/v2-design-3/sim/model.py (L1 4 m, L2 8 m, d 0.5 m).
+Geometry and numbers come from the real model: sim/model.py (L1 4 m, L2 8 m, d 0.5 m).
 Run:  python figs.py   (writes img/*.png and img/sizes.json)
 Light, print versions for the study guides: FIG_THEME=light FIG_OUT=<dir> python figs.py
 """
@@ -396,7 +396,7 @@ def fig_grid():
 
 
 # ---------------------------------------------------------------- Part 4: one bay, guided against unaided (real run)
-RUN = os.path.join(os.path.dirname(OUT), "..", "..", "v2", "v2-design-3", "viewer", "public", "data", "cross_0.json")
+RUN = os.path.join(os.path.dirname(OUT), "..", "..", "viewer", "public", "data", "cross_0.json")
 
 
 def fig_compare():

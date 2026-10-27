@@ -2,40 +2,21 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "v2d2",
+      "name": "viewer",
       "runtimeExecutable": "npm",
       "runtimeArgs": [
         "--prefix",
-        "v2/v2-design-2/viewer",
-        "run",
-        "dev"
-      ],
-      "port": 5177
-    },
-    {
-      "name": "v2d2-demo",
-      "runtimeExecutable": "python",
-      "runtimeArgs": [
-        "v2/v2-design-2/server.py"
-      ],
-      "port": 4177
-    },
-    {
-      "name": "v2d3",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": [
-        "--prefix",
-        "v2/v2-design-3/viewer",
+        "viewer",
         "run",
         "dev"
       ],
       "port": 5179
     },
     {
-      "name": "v2d3-demo",
+      "name": "server",
       "runtimeExecutable": "python",
       "runtimeArgs": [
-        "v2/v2-design-3/server.py"
+        "server.py"
       ],
       "port": 4179
     }
