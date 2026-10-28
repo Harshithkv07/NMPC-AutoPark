@@ -134,6 +134,10 @@ export default function App() {
   const resetView = () => { setSelected(null); setMode('select'); setBaselineState(false); setWaitFor(null); pb.seek(0) }
   const toLibrary = () => { setLiveLot(null); setEditing(null); resetView() }
   const goHome = () => { setScreen('home'); setDesign(null); setYard(null); setSel(null); toLibrary() }
+  // back from a guided run to the bay choice, so another certified bay can be picked
+  const backToBays = () => { setLiveMode(false); resetView() }
+  // back from the set-up step: drop the unsaved fill changes and return to the bay choice
+  const cancelSetup = () => setEditing(null)
   // The set-up step opens on an empty lot and the user parks the trucks; without the live solver the fill cannot be
   // changed, so it shows the library fill.
   const setupStart = (d) => (live ? new Set() : new Set(occupiedIds(d)))
@@ -426,6 +430,9 @@ export default function App() {
   const progress = liveLot ? { ...liveProgress(liveLot.lot), done: liveLot.done, elapsed: liveLot.elapsed, lost: !!liveLot.lost,
     frac: liveLot.done ? 1 : certifyFraction(liveLot.lot, since.current.id === liveLot.id ? since.current.bays : {}, liveLot.elapsed) } : null
   const noBar = !guide                                    // no status footer: the bar above the yard carries it all
+  const backBtn = (
+    <button className="btn" onClick={backToBays} title="Back to the bays: choose another certified bay">{I.chevL}Other bays</button>
+  )
 
   if (error) {
     return (
@@ -456,7 +463,7 @@ export default function App() {
           <section className="center">
             <DesignBand label={design.spec.label} problems={problems} blockers={blockers} busy={busy} canEdit={canEdit}
               onAdd={(ap) => addItem('bay', ap)} onRow={() => addItem('row')} onObstacle={() => addItem('obstacle')}
-              onDuplicate={dupItem} onDelete={delItem} onLoad={openYardFile} onSave={saveYard} onContinue={designContinue} />
+              onDuplicate={dupItem} onDelete={delItem} onLoad={openYardFile} onSave={saveYard} onContinue={designContinue} onBack={goHome} />
             <div className="stage editor-stage">
               <Editor spec={design.spec} veh={rigVehicle} sel={sel} onSelect={setSel} onChange={setSpec} bad={badKeys} />
               {notice && (
@@ -482,23 +489,22 @@ export default function App() {
         <section className="center">
           {guide
             ? (liveOn
-              ? <LiveBand lr={lr} frame={frameText} vehicle={shown.vehicle} baseline={baseline} setBaseline={setBaseline} setLive={setLive2} />
+              ? <LiveBand lr={lr} frame={frameText} vehicle={shown.vehicle} baseline={baseline} setBaseline={setBaseline} setLive={setLive2} onBack={backToBays} />
               : baseline
               ? <UnaidedBand plan={plan} t={pb.t} frame={frame} baseline={baseline} setBaseline={setBaseline}
-                  extra={canLive ? <SourceSwitch live={false} setLive={setLive2} /> : null} />
+                  extra={<>{backBtn}{canLive ? <SourceSwitch live={false} setLive={setLive2} /> : null}</>} />
               : <GuidanceBand steps={steps} t={pb.t} duration={plan.duration} plan={plan} baseline={baseline} setBaseline={setBaseline} lock={lock}
-                  extra={canLive ? <SourceSwitch live={false} setLive={setLive2} /> : null} />)
+                  extra={<>{backBtn}{canLive ? <SourceSwitch live={false} setLive={setLive2} /> : null}</>} />)
             : <SelectBand okCount={okCount} free={free} live={live} progress={progress} editing={!!editing} parked={bays.length - free}
                 changed={changed} dirty={dirty} busy={busy} waitFor={waitFor} onRandom={newRandomLot} onEdit={startEdit}
-                onRandomFill={randomFill} onReset={resetFill} onContinue={continueSetup} onLayout={live ? editLayout : null} />}
+                onRandomFill={randomFill} onReset={resetFill} onContinue={continueSetup} onLayout={live ? editLayout : null} onCancel={cancelSetup} />}
 
           <div className={`stage ${guide ? 'has-arm' : ''}`}>
-            {guide && <ArmInset frame={frame} vehicle={shown.vehicle} />}
             {guide && (
               <div className="inst-overlay">
-                <HitchPanel frame={frame} frameText={frameText} vehicle={shown.vehicle} pred={pred} />
-                <InputsPanel frame={frame} frameText={frameText} vehicle={shown.vehicle} advised={baseline || liveOn ? null : advised} unaided={baseline}
-                  note={liveOn ? (baseline ? 'live: the unaided driver steers' : 'live: the NMPC steers') : null} />
+                <HitchPanel frame={frame} frameText={frameText} vehicle={shown.vehicle} pred={pred} gauge />
+                <InputsPanel frame={frame} frameText={frameText} vehicle={shown.vehicle} advised={baseline || liveOn ? null : advised} gauge />
+                <ArmInset frame={frame} vehicle={shown.vehicle} />
               </div>
             )}
             {shown ? (
@@ -562,7 +568,7 @@ export default function App() {
         </section>
 
         {!guide && shown && (
-          <aside className="side" aria-label="About this system">
+          <aside className="side side-centre" aria-label="About this system">
             <About vehicle={editing ? editing.base.vehicle : shown.vehicle}
               edit={!editing ? null : vehicleEdit && rigSpec
                 ? { spec: rigSpec, base: libSpec, limits: vehicleEdit.limits, gap: vehicleEdit.jack_gap, onChange: setRig }

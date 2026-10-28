@@ -35,7 +35,7 @@ function headline(run, unaided, planning) {
 }
 
 // The band above the yard while a run is live: what the controller is doing right now.
-export function LiveBand({ lr, frame, vehicle, baseline, setBaseline, setLive }) {
+export function LiveBand({ lr, frame, vehicle, baseline, setBaseline, setLive, onBack }) {
   const run = lr.run
   const planning = run.state === 'planning' || run.state === 'starting'
   const done = run.done
@@ -52,6 +52,7 @@ export function LiveBand({ lr, frame, vehicle, baseline, setBaseline, setLive })
       {g === '!' ? <div className="gearbox g-X" title="Jackknifed"><b>!</b><small>Jackknife</small></div> : <Gear g={g} />}
       <div className="band-body">
         <div className="band-meta">
+          <button className="btn" onClick={onBack} title="Back to the bays: choose another certified bay">{I.chevL}Other bays</button>
           <span className="live-dot" aria-hidden="true" /><span><b>Live</b> &middot; {planning ? 'planning' : done ? 'finished' : 'driving'}</span>
           {!baseline && ms?.n ? <span className="tnum" title="Time for one NMPC optimisation on this laptop, against its 250 ms control period">NMPC solve <b>{fmt(ms.last, 0)} ms</b> (mean {fmt(ms.mean, 0)}) of 250</span> : null}
           <SourceSwitch live setLive={setLive} />

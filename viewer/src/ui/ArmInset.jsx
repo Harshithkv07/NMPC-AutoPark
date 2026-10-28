@@ -1,6 +1,5 @@
 import { DEG, fmt } from '../data'
 import { armChain, ARM_W as W, ARM_H as H } from '../derive'
-import { M } from './math'
 
 // A point `r` px from `o` in the world direction `a` (screen y points down)
 const at = (o, r, a) => [o[0] + r * Math.cos(a), o[1] - r * Math.sin(a)]
@@ -11,7 +10,6 @@ function arc(o, r, a0, a1) {
   return `M${xy(at(o, r, a0))}A${r} ${r} 0 0 ${d < 0 ? 1 : 0} ${xy(at(o, r, a0 + d))}`
 }
 const signed = (v, d = 1) => { const r = Number(v.toFixed(d)); return `${r > 0 ? '+' : r < 0 ? '−' : ''}${Math.abs(r).toFixed(d)}` }
-const wrapDeg = (a) => ((a * DEG + 540) % 360) - 180
 
 // Live inset on the map: the tractor-trailer drawn as the 2-link planar arm the model treats it as, moving with the rig.
 export default function ArmInset({ frame, vehicle: v }) {
@@ -58,12 +56,6 @@ export default function ArmInset({ frame, vehicle: v }) {
         <circle className="arm-ee" cx={k.T[0]} cy={k.T[1]} r="5" />
         <path className="arm-ee" d={`M${k.T[0] - 8} ${k.T[1]}h16M${k.T[0]} ${k.T[1] - 8}v16`} />
       </svg>
-      <dl className="arm-vals">
-        <div><dt><M>θ</M><sub>0</sub></dt><dd>{Math.round(wrapDeg(k.th)) || 0}°</dd></div>
-        <div className={alarm ? 'alarm' : ''}><dt><M>ψ</M></dt><dd>{signed(k.psi * DEG)}°</dd></div>
-        <div><dt><M>δ</M></dt><dd>{signed(k.delta * DEG)}°</dd></div>
-        <div><dt><M>v</M></dt><dd>{signed(frame[5], 2)}</dd></div>
-      </dl>
     </figure>
   )
 }

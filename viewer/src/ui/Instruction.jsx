@@ -31,9 +31,10 @@ export const Gear = ({ g }) => (
 const OFFLINE = 'Live solving needs the server: start run_demo.bat'
 
 // The "set up the lot" step's actions: edit layout / random fill / reset / continue.
-function editingActions({ offline, busy, dirty, changed, onLayout, onRandomFill, onReset, onContinue }) {
+function editingActions({ offline, busy, dirty, changed, onLayout, onRandomFill, onReset, onContinue, onCancel }) {
   return (
     <>
+      {onCancel && <button className="btn" onClick={onCancel} disabled={busy} title="Back to choosing a bay, without the changes made here">{I.chevL}Back</button>}
       {onLayout && <button className="btn" onClick={onLayout} disabled={busy} title="Back to the yard: move, add or remove bays and obstacles">{I.edit}Edit layout</button>}
       <button className="btn" onClick={onRandomFill} disabled={busy}
         title={offline ? 'Step through the six pre-solved library fills' : 'A random set of filled bays, which you can then adjust'}>{I.dice}Random fill</button>
@@ -104,7 +105,7 @@ function selectBandIdle({ okCount, free, progress }) {
 // idle); the actions only ever have two (editing, or not) -- solving and idle show the same Change fill / New
 // random lot buttons, exactly as before this was split out for readability.
 export function SelectBand({ okCount, free, live, progress, editing, parked, changed, dirty, busy, waitFor,
-  onRandom, onEdit, onRandomFill, onReset, onContinue, onLayout = null }) {
+  onRandom, onEdit, onRandomFill, onReset, onContinue, onLayout = null, onCancel = null }) {
   const offline = !live
   const solving = progress && !progress.done
   const { title, note } = editing
@@ -113,7 +114,7 @@ export function SelectBand({ okCount, free, live, progress, editing, parked, cha
     ? selectBandSolving({ progress, waitFor })
     : selectBandIdle({ okCount, free, progress })
   const actions = editing
-    ? editingActions({ offline, busy, dirty, changed, onLayout, onRandomFill, onReset, onContinue })
+    ? editingActions({ offline, busy, dirty, changed, onLayout, onRandomFill, onReset, onContinue, onCancel })
     : idleActions({ offline, busy, onEdit, onRandom })
   return (
     <section className="band select" aria-label="Instructions">

@@ -165,7 +165,7 @@ export default function Editor({ spec, veh, sel, onSelect, onChange, bad }) {
 }
 
 // The band above the editor: what to do, the drawing tools, and the way on.
-export function DesignBand({ onAdd, onRow, onObstacle, onDuplicate, onDelete, canEdit, onLoad, onSave, onContinue, busy, problems, blockers, label }) {
+export function DesignBand({ onAdd, onRow, onObstacle, onDuplicate, onDelete, canEdit, onLoad, onSave, onContinue, onBack, busy, problems, blockers, label }) {
   const file = useRef(null)
   const bandRef = useRef(null)
   const bl = (blockers ?? problems).length                       // errors only (fallback: treat all as blockers)
@@ -200,6 +200,7 @@ export function DesignBand({ onAdd, onRow, onObstacle, onDuplicate, onDelete, ca
         </div>
         <input ref={file} type="file" accept=".json,application/json" hidden
           onChange={(e) => { const f = e.target.files?.[0]; if (f) f.text().then(onLoad); e.target.value = '' }} />
+        <button className="btn" onClick={onBack} disabled={busy} title="Back to the home page: the yard is not kept">{I.chevL}Back</button>
         <button className="btn primary" onClick={onContinue} disabled={busy || bl > 0}
           title={bl ? 'Fix the problems listed on the right first' : 'Next: choose which bays are filled and set the vehicle'}>
           Continue{I.chevR}

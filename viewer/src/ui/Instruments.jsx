@@ -12,14 +12,15 @@ const signed = (v, d = 1) => { const r = Number(v.toFixed(d)); return `${r > 0 ?
 
 // ---------- hitch angle: dial + readouts + look-ahead chart ----------
 
-function HitchDial({ psiDeg, lim, peak }) {
+// gauge: the small square icon of the guidance overlay (see .gauge-ic); otherwise the wide dial of the side panel
+function HitchDial({ psiDeg, lim, peak, gauge = false }) {
   const cx = 100, cy = 102, R = 80
   const a = (d) => sweep(d, -90, 90)
   const caution = lim * 0.58
   const [nx, ny] = polar(cx, cy, R - 12, a(psiDeg))
   const hot = Math.abs(psiDeg) > lim * 0.92
   return (
-    <svg className="dial" viewBox="-12 -8 224 124" role="img" aria-label={`Hitch angle ${fmt(psiDeg)} degrees; limit ${fmt(lim, 0)}`}>
+    <svg className={gauge ? 'gauge-ic' : 'dial'} viewBox={gauge ? '-12 -60 224 224' : '-12 -8 224 124'} role="img" aria-label={`Hitch angle ${fmt(psiDeg)} degrees; limit ${fmt(lim, 0)}`}>
       <path d={arc(cx, cy, R, a(-caution), a(caution))} stroke={C.zoneSafe} strokeWidth="11" fill="none" />
       <path d={arc(cx, cy, R, a(caution), a(lim))} stroke={C.zoneCaution} strokeWidth="11" fill="none" />
       <path d={arc(cx, cy, R, a(-lim), a(-caution))} stroke={C.zoneCaution} strokeWidth="11" fill="none" />
@@ -52,12 +53,21 @@ function HitchDial({ psiDeg, lim, peak }) {
   )
 }
 
-export function HitchPanel({ frame, frameText, vehicle, pred }) {
+export function HitchPanel({ frame, frameText, vehicle, pred, gauge = false }) {
   const lim = vehicle.psi_crit * DEG
   const psiT = frameText[4] * DEG
   const margin = lim - Math.abs(psiT)
   const tone = margin < 8 ? 'danger' : margin < 20 ? 'warn' : ''
   const active = margin < 6
+  if (gauge) return (
+    <div className="gauge gauge-wide" title={`Hitch angle, hard limit ±${fmt(lim, 0)}°`}>
+      <HitchDial psiDeg={frame[4] * DEG} lim={lim} peak={pred?.peak} gauge />
+      <div className="gauge-txt">
+        <span className={`gauge-v ${tone}`}>{signed(psiT)}°</span>
+        <span className="gauge-k">Hitch ψ</span>
+      </div>
+    </div>
+  )
   return (
     <section className="panel" aria-label="Hitch angle">
       <header className="panel-h"><h3>Hitch angle ψ</h3><span className="panel-m">hard limit ±{fmt(lim, 0)}°</span></header>
@@ -77,9 +87,9 @@ export function HitchPanel({ frame, frameText, vehicle, pred }) {
 
 // ---------- driver inputs: steering wheel + speed, live against advised ----------
 
-function WheelGlyph({ turns, advisedTurns }) {
+function WheelGlyph({ turns, advisedTurns, gauge = false }) {
   return (
-    <svg className="glyph" viewBox="0 0 56 56" role="img" aria-label="Steering wheel position">
+    <svg className={gauge ? 'gauge-ic' : 'glyph'} viewBox="0 0 56 56" role="img" aria-label="Steering wheel position">
       {advisedTurns != null && (
         <g transform={`translate(28 28) rotate(${-advisedTurns * 360})`}>
           <polygon points="0,-22 -3.6,-27.5 3.6,-27.5" fill={C.accent} />
@@ -96,12 +106,12 @@ function WheelGlyph({ turns, advisedTurns }) {
 }
 
 const SPEED_MAX = 8
-function SpeedGlyph({ kmh, advisedKmh }) {
+function SpeedGlyph({ kmh, advisedKmh, gauge = false }) {
   const cx = 28, cy = 36, R = 21
   const a = (k) => sweep(k, 0, SPEED_MAX)
   const [nx, ny] = polar(cx, cy, R - 3, a(kmh))
   return (
-    <svg className="glyph" viewBox="0 0 56 56" role="img" aria-label="Speedometer">
+    <svg className={gauge ? 'gauge-ic' : 'glyph'} viewBox="0 0 56 56" role="img" aria-label="Speedometer">
       <path d={arc(cx, cy, R, a(0), a(SPEED_MAX))} stroke={C.zoneSafe} strokeWidth="5" fill="none" />
       {[0, 2, 4, 6, 8].map((k) => {
         const [x0, y0] = polar(cx, cy, R + 3, a(k)), [x1, y1] = polar(cx, cy, R + 6, a(k))
@@ -121,7 +131,7 @@ function SpeedGlyph({ kmh, advisedKmh }) {
   )
 }
 
-export function InputsPanel({ frame, frameText, vehicle, advised, unaided, note = null }) {
+export function InputsPanel({ frame, frameText, vehicle, advised, unaided, note = null, gauge = false }) {
   const turnsT = turnsOf(frameText[6])
   const side = sideOf(turnsT)
   const lock = vehicle.delta_max * DEG
@@ -129,6 +139,20 @@ export function InputsPanel({ frame, frameText, vehicle, advised, unaided, note 
   const kmhT = Math.abs(frameText[5]) * 3.6
   const dir = kmhT < 0.15 ? 'stopped' : frameText[5] < 0 ? 'reverse' : 'forward'
   const advSide = advised ? sideOf(advised.turns) : null
+  if (gauge) return (
+    <div className="gauge-row">
+      <div className="gauge" title={`Road wheels ${fmt(roadDeg, 0)}°, ${fmt((roadDeg / lock) * 100, 0)}% of the steering lock`}>
+        <WheelGlyph turns={turnsOf(frame[6])} advisedTurns={advised?.turns} gauge />
+        <span className="gauge-v">{side === 'straight' ? 'straight' : `${fmt(Math.abs(turnsT), 2)} ${side}`}</span>
+        <span className="gauge-k">Wheel turns</span>
+      </div>
+      <div className="gauge" title={advised ? `Advised ${fmt(advised.kmh, 0)} km/h for this step` : 'Speed'}>
+        <SpeedGlyph kmh={Math.abs(frame[5]) * 3.6} advisedKmh={advised?.kmh} gauge />
+        <span className="gauge-v">{fmt(kmhT)} km/h</span>
+        <span className="gauge-k">{dir === 'stopped' ? 'Speed' : `Speed · ${dir}`}</span>
+      </div>
+    </div>
+  )
   return (
     <section className="panel" aria-label="Driver inputs">
       <header className="panel-h">
