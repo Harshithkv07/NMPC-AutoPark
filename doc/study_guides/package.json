@@ -1,9 +1,0 @@
-{
-  "name": "study_guides",
-  "private": true,
-  "description": "Builds the presenter study guides (HTML + PDF) for the final review",
-  "type": "commonjs",
-  "dependencies": {
-    "katex": "0.16.11"
-  }
-}
