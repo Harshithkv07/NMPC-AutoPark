@@ -13,74 +13,79 @@ ABSTRACT
 Learner drivers spend weeks on reverse-trailer parking before they get it
 right, and the reason is less about hand-eye coordination than most people
 think. The hitch dynamics are open-loop unstable in reverse. Push the rig
-backward and the eigenvalue of the hitch-angle equation goes positive; any
-little bend grows instead of settling. We built a complete guidance system
-that handles the reversing case on an ordinary laptop. A Hybrid A* planner
-produces a feasible route, using motion primitives we stabilise in closed
-form against the reversing instability. A nonlinear model-predictive
-controller then tracks the plan, with a hard 60-degree cap on the hitch
-angle. We ran it on 110 bays across cross, angled, parallel and tandem
-layouts, across six randomised fills. Every bay certifies on the first
-attempt. Peak hitch angle: 50.1 degrees. Median parked error ran between
-0.11 m and 0.23 m, depending on layout. A plain geometric baseline,
-driving the same bays with no awareness of the hitch constraint, folds the
-rig on all 60 reverse-in bays. Per-bay solving time sits around 5 s, with
-the NMPC closing each 250 ms control step in about 12 ms.
+backward and the eigenvalue of the hitch-angle equation goes positive;
+any little bend grows instead of settling. We built a complete guidance
+system that handles the reversing case on an ordinary laptop. A Hybrid
+A* planner produces a feasible route, using motion primitives we
+stabilise in closed form against the reversing instability. A nonlinear
+model-predictive controller (NMPC) then tracks the plan, with a hard
+60-degree cap on the hitch angle. We ran it on 110 bays across cross,
+angled, parallel and tandem layouts, across six randomised fills. Every
+bay certifies on the first attempt. Peak hitch angle: 50.1 degrees.
+Median parked error ran between 0.11 m and 0.23 m, depending on layout.
+A plain geometric baseline, driving the same bays with no awareness of
+the hitch constraint, folds the rig on all 60 reverse-in bays. Per-bay
+solving time sits around 5 s, with the NMPC closing each 250 ms control
+step in about 12 ms.
 
-Index Terms: nonholonomic systems, articulated vehicles, model predictive
-control, Hybrid A*, tractor-trailer, parking, jackknife avoidance.
+Index Terms: nonholonomic systems, articulated vehicles, model
+predictive control, Hybrid A*, tractor-trailer, parking, jackknife
+avoidance.
 
 
 ================================================================================
 I. INTRODUCTION
 ================================================================================
 
-Ask any truck driver what the hardest part of the test was. Reverse-parking
-a loaded trailer into a bay almost always comes up. It is not about
-guessing where the wheels are. The hitch itself fights back.
+Ask any truck driver what the hardest part of the test was.
+Reverse-parking a loaded trailer into a bay almost always comes up. It
+is not about guessing where the wheels are. The hitch itself fights
+back.
 
-Picture it. A tractor pinned to a trailer with one hinge. Rolled forward,
-the trailer trails behind politely, no drama. Rolled backward, something
-goes wrong. One degree of bend turns into ten. Ten into thirty. By the
-time you register it, the thing has folded on you.
+Picture it. A tractor pinned to a trailer with one hinge. Rolled
+forward, the trailer trails behind politely, no drama. Rolled backward,
+something goes wrong. One degree of bend turns into ten. Ten into
+thirty. By the time you register it, the thing has folded on you.
 
 Mathematically the setup is a planar two-link chain. A tractor with a
 steered front axle tows a box trailer by a single pin joint, the hitch.
-Four scalars capture the kinematics: tractor rear-axle position (x1, y1),
-tractor heading theta_0, and hitch angle psi = theta_0 - theta_1. The
-driver has exactly two levers, speed v and steering angle delta. The hitch
-is passive. Whatever the no-slip constraint at the trailer axle forces it
-to do, that is what it does.
+Four scalars capture the kinematics: tractor rear-axle position
+(x1, y1), tractor heading theta_0, and hitch angle psi = theta_0 -
+theta_1. The driver has exactly two levers, speed v and steering angle
+delta. The hitch is passive. Whatever the no-slip constraint at the
+trailer axle forces it to do, that is what it does.
 
-A short algebra pass (Section III walks the whole thing through) gives the
-linearised rate of change of psi as roughly -v/L_2 times psi, plus a term
-in the steering input. Watch the sign of that coefficient. It flips with
-v. Forward motion damps psi down toward zero. Reverse motion blows it up.
-At 1 m/s on our 8 m trailer wheelbase the doubling time is around 5.5 s.
-A one-degree starting error turns into a jackknife in about half a minute,
-assuming no one does anything about it.
+A short algebra pass (Section III walks through it) gives the linearised
+rate of change of psi as roughly -v/L_2 times psi, plus a term in the
+steering input. Watch the sign of that coefficient. It flips with v.
+Forward motion damps psi down toward zero. Reverse motion blows it up.
+At 1 m/s on our 8 m trailer wheelbase the doubling time is around
+5.5 s. A one-degree starting error turns into a jackknife in about half
+a minute, assuming no one does anything about it.
 
 Which is where this project sits.
 
 Section IV covers the Hybrid A* planner, whose primitives come from
-closed-form inversion of psi-dot and so stay inside the stable region in
-both gears. Section V covers the NMPC that tracks the planned path with
-the 60-degree hitch limit as a hard inequality at every step of a 9.6 s
-prediction horizon. Section VI is the second-attempt ladder, which lets
-the solver recover a bay the way a human driver would: pull forward,
-re-plan, try again. Section VII, implementation. Section VIII, results
-against the 110-bay library and two baselines. Limitations last.
+closed-form inversion of psi-dot and so stay inside the stable region
+in both gears. Section V covers the NMPC that tracks the planned path
+with the 60-degree hitch limit as a hard inequality at every step of a
+9.6 s prediction horizon. Section VI is the second-attempt ladder,
+which lets the solver recover a bay the way a human driver would: pull
+forward, re-plan, try again. Section VII, implementation. Section VIII,
+results against the 110-bay library and two baselines. Limitations
+last.
 
 What we actually added:
 
 - A stabilised set of Hybrid A* primitives that respect the hitch-angle
   dynamics in both gears, derived from the closed-form inversion of
   psi-dot.
-- A fast NMPC implementation that batches the finite-difference Jacobian
-  through a single numpy evaluation of RK4 and its eight forward-
-  difference neighbours, closing a control step in about 12 ms.
-- A certified end-to-end benchmark on 110 bays, with a regression gate we
-  actually trust, and a geometric baseline that is not a strawman.
+- A fast NMPC implementation that batches the finite-difference
+  Jacobian through a single numpy evaluation of RK4 and its eight
+  forward-difference neighbours, closing a control step in about
+  12 ms.
+- A certified end-to-end benchmark on 110 bays, with a regression gate
+  we actually trust, and a geometric baseline that is not a strawman.
 
 Nothing exotic underneath. CPython, numpy, scipy. That is the whole
 scientific stack.
@@ -90,31 +95,42 @@ scientific stack.
 II. RELATED WORK
 ================================================================================
 
-Dubins (1957) is the reference everyone starts with for shortest paths of
-a car with bounded curvature. Laumond's edited volume and LaValle's
-textbook give the wider treatment of nonholonomic motion planning,
-including the chained-form view of the general n-trailer. Altafini, and
-Bolzern et al., sit closer to the specific kinematics we actually use.
+Three papers frame what we built.
 
-Murray and Sastry proved in 1993 that chained-form systems are controllable
-with periodic steering. We never used their steering law. We cite them
-because the local reachability question would otherwise have to be argued
-from scratch, and a reviewer is going to ask.
+Alenchery et al. [1] is the closest match to our problem. The preprint
+proposes the exact pipeline we settled on, sensor fusion feeding
+Hybrid A*, then NMPC for the trailer, with LQR for low-level actuation.
+In the paper itself only the Hybrid A* and a B-spline smoother are
+actually implemented; the NMPC and LQR stages are described but never
+coded, and the reported closed-loop runs jackknife on the harder reverse
+bays. We take that as our starting point: build the NMPC stage the
+preprint omits, impose the hitch-angle limit the preprint lacks, and
+run the whole thing closed-loop.
 
-The planner side is Hybrid A* in the sense of Dolgov et al. Our twist sits
-in the choice of primitives. Rather than a fixed set of circular arcs with
-discretised steering, we parametrise each primitive by a target hitch angle
-psi_des in {-45, -25, 0, +25, +45} degrees, then derive the steering input
-in closed form. In reverse that derivation behaves as a one-step feedback
-regulator and keeps the planner inside the feasible region.
+Beglini et al. [2] come at the hitch-angle problem from the control
+side. They design an intrinsically stable MPC (IS-MPC) for a tractor-
+trailer that follows a given reference path and guarantees |psi| stays
+bounded, even in reverse. The paper handles no planning, no obstacles,
+and no parking manoeuvre. We treat it as the anti-jackknifing invariant
+we want to preserve, then push the scope outward: our NMPC enforces the
+same hitch-angle constraint while tracking a Hybrid A* plan through a
+yard full of parked trucks.
 
-Mayne's 2014 survey remains the shortest useful pointer to real-time MPC.
-The algorithmic machinery we lean on, SQP applied to the discretised
-single-shooting problem with finite-difference gradients, follows Betts and
-the real-time iteration framework of Diehl et al. We used scipy's SLSQP
-straight out of the box. It handled our horizon size without fuss. Adding
-a dedicated QP solver to the dependency list felt like extra ceremony for
-no clear win.
+Kayacan et al. [3] is the agricultural reference. Their tube-based
+decentralised NMPC drives an autonomous tractor pulling a trailed
+implement along crop rows for field work; the reported cross-track
+accuracy in straight sections is 5-8 cm. The paper establishes what
+tractor-trailer MPC accuracy is reasonable to expect in open terrain,
+which is the benchmark we use to interpret our own 7.95 cm and 5.42 cm
+straight-line errors in the parking context.
+
+The three papers partition the space neatly. Alenchery brings the
+pipeline but leaves the controller unbuilt. Beglini brings the
+hitch-stable controller but leaves out planning and the yard. Kayacan
+brings the field accuracy benchmark but not the on-road parking task.
+Our contribution sits at the intersection: Alenchery's pipeline, with
+Beglini's hitch guarantee, benchmarked against Kayacan's accuracy
+regime, applied to on-road reverse parking into a tight yard.
 
 
 ================================================================================
@@ -123,17 +139,17 @@ III. SYSTEM MODEL
 
 A. State and inputs
 
-Let (x1, y1) be the position of the tractor rear axle in the world frame.
-Let theta_0 be the tractor heading. Let psi = theta_0 - theta_1 be the
-hitch angle, with theta_1 the trailer heading. The state is
+Let (x1, y1) be the position of the tractor rear axle in the world
+frame. Let theta_0 be the tractor heading. Let psi = theta_0 - theta_1
+be the hitch angle, with theta_1 the trailer heading. The state is
 
     X = (x1, y1, theta_0, psi).
 
 Two inputs: signed tractor speed v (positive forward), and front-wheel
 steering angle delta. Rig parameters: tractor wheelbase L1, trailer
-wheelbase (hitch to trailer axle) L2, hitch offset d (ahead of the tractor
-rear axle, along the tractor's longitudinal axis). Our defaults: L1 = 4 m,
-L2 = 8 m, d = 0.5 m, |delta| <= 35 deg, |v| <= 2 m/s.
+wheelbase (hitch to trailer axle) L2, hitch offset d (ahead of the
+tractor rear axle, along the tractor's longitudinal axis). Our defaults:
+L1 = 4 m, L2 = 8 m, d = 0.5 m, |delta| <= 35 deg, |v| <= 2 m/s.
 
 B. The four-state kinematic ODE
 
@@ -147,20 +163,20 @@ Under the no-slip assumption, which holds to a few centimetres below
                      - sin(psi)/L2
                      - d tan(delta) cos(psi) / (L1 L2) ].
 
-The first three are the standard rear-axle bicycle model. The fourth drops
-out of applying the trailer-axle no-slip constraint to the forward
-kinematics of the hitch and then using psi_dot = theta_0_dot - theta_1_dot.
-The full six-step derivation lives in our kinematics reference
-(doc/tractor-trailer-kinematics.md); we would reproduce it here except we
-would run out of column space.
+The first three are the standard rear-axle bicycle model. The fourth
+drops out of applying the trailer-axle no-slip constraint to the
+forward kinematics of the hitch and then using psi_dot = theta_0_dot -
+theta_1_dot. The full six-step derivation lives in our kinematics
+reference (doc/tractor-trailer-kinematics.md); we would reproduce it
+here except we would run out of column space.
 
 Three physical terms sit inside those brackets. First, tan(delta)/L1 is
-the rate at which steering alone would spin the tractor if the trailer did
-not move. Second, -sin(psi)/L2 is the no-slip reaction from the trailer
-axle. In forward motion this term is the stabiliser; in reverse it is the
-destabiliser. Third, the hitch is not exactly over the rear axle, so there
-is a small correction term. Our rig has d = 0.5 m, which makes this
-contribution a few per cent at most.
+the rate at which steering alone would spin the tractor if the trailer
+did not move. Second, -sin(psi)/L2 is the no-slip reaction from the
+trailer axle. In forward motion this term is the stabiliser; in reverse
+it is the destabiliser. Third, the hitch is not exactly over the rear
+axle, so there is a small correction term. Our rig has d = 0.5 m, which
+makes this contribution a few per cent at most.
 
 C. Why reversing is unstable
 
@@ -169,65 +185,70 @@ Linearise around psi = 0, delta = 0:
     psi_dot ~ A psi + B(delta, v),   A = -v/L2,
     B = (v delta / L1) (1 - d/L2).
 
-Forward motion: A is negative, so the hitch self-aligns with time constant
-L2/v. Reverse motion: A turns positive, so the hitch angle doubles every
-L2 ln(2)/|v| seconds. Plug in our numbers at 1 m/s and the doubling time
-is roughly 5.5 s.
+Forward motion: A is negative, so the hitch self-aligns with time
+constant L2/v. Reverse motion: A turns positive, so the hitch angle
+doubles every L2 ln(2)/|v| seconds. Plug in our numbers at 1 m/s and
+the doubling time is roughly 5.5 s.
 
 Everything in our architecture gets built around that one scalar. A
-controller that tracks psi as another output with the usual tracking cost
-inherits the instability of the plant. A controller that treats psi as a
-hard state constraint, as our NMPC does, holds the rig inside the feasible
-region whether the dynamics want to drift or not.
+controller that tracks psi as another output with the usual tracking
+cost inherits the instability of the plant. A controller that treats
+psi as a hard state constraint, as our NMPC does, holds the rig inside
+the feasible region whether the dynamics want to drift or not.
 
 D. Flat output
 
-The trailer axle position is a differentially flat output of the system.
-Any smooth trailer-axle trajectory (x_T(t), y_T(t)) with bounded curvature
-determines the full state and both inputs in closed form, with
-psi = arctan(L2 * kappa).
+The trailer axle position is a differentially flat output of the
+system. Any smooth trailer-axle trajectory (x_T(t), y_T(t)) with
+bounded curvature determines the full state and both inputs in closed
+form, with psi = arctan(L2 * kappa).
 
-We lean on this twice. First in the planner: the heuristic between any two
-nodes is a Dubins path on the trailer axle, scaled by the admissible
-curvature kappa_max = tan(psi_crit)/L2. Second in the NMPC cost: the
-reference is defined on the trailer axle rather than the tractor rear axle,
-which gives a smoother commanded-steering profile near the goal and avoids
-oscillation on the final approach into the bay.
+We lean on this twice. First in the planner: the heuristic between any
+two nodes is a Dubins path on the trailer axle, scaled by the
+admissible curvature kappa_max = tan(psi_crit)/L2. Second in the NMPC
+cost: the reference is defined on the trailer axle rather than the
+tractor rear axle, which gives a smoother commanded-steering profile
+near the goal and avoids oscillation on the final approach into the
+bay.
 
 
 ================================================================================
 IV. HYBRID A* WITH STABILISED PRIMITIVES
 ================================================================================
 
-Grid A* cannot plan a tractor-trailer manoeuvre out of the box. Grid cells
-do not respect the nonholonomic constraints, and a straight line between
-two neighbouring cells is just not drivable. Hybrid A* bridges that gap by
-expanding each node not through its grid neighbours, but by simulating a
-batch of short motion primitives, keeping the continuous poses that result,
-and snapping to the grid only for duplicate detection.
+Grid A* cannot plan a tractor-trailer manoeuvre out of the box. Grid
+cells do not respect the nonholonomic constraints, and a straight line
+between two neighbouring cells is just not drivable. Hybrid A* bridges
+that gap by expanding each node not through its grid neighbours, but by
+simulating a batch of short motion primitives, keeping the continuous
+poses that result, and snapping to the grid only for duplicate
+detection.
 
 A. Primitives tuned to the hitch dynamics
 
-Our lattice state is (x, y, theta_0, psi), at a grid resolution of 0.25 m
-in position, 10 deg in theta_0, and 5 deg in psi. A node expansion runs
-ten primitives: five target hitch angles psi_des in {-45, -25, 0, +25,
-+45} degrees, each in both gears. Each primitive runs for 0.6 s with a
-time step of 0.1 s, so it corresponds to six RK4 sub-steps of the ODE.
+Our lattice state is (x, y, theta_0, psi), at a grid resolution of
+0.25 m in position, 10 deg in theta_0, and 5 deg in psi. A node
+expansion runs ten primitives: five target hitch angles psi_des in
+{-45, -25, 0, +25, +45} degrees, each in both gears. Each primitive
+runs for 0.6 s with a time step of 0.1 s, so it corresponds to six RK4
+sub-steps of the ODE.
 
-The steering input is not pulled from a fixed grid. Given a target psi_des,
-we solve the psi-dot equation for the delta that pushes psi toward psi_des
-with a chosen first-order time constant. Substituting that delta turns
-every primitive into a short closed-form segment of a hitch-angle
-regulator. In forward motion the regulator is a mild stabiliser, nothing
-more. In reverse it is carrying the whole thing. We tested this directly:
-without the regulator, a plain reverse-gear primitive wanders out of the
-60-degree band inside one or two expansions.
+The steering input is not pulled from a fixed grid. Given a target
+psi_des, we solve the psi-dot equation for the delta that pushes psi
+toward psi_des with a chosen first-order time constant. Substituting
+that delta turns every primitive into a short closed-form segment of a
+hitch-angle regulator. In forward motion the regulator is a mild
+stabiliser, nothing more. In reverse it is carrying the whole thing.
+We tested this directly: without the regulator, a plain reverse-gear
+primitive wanders out of the 60-degree band inside one or two
+expansions.
 
 The ten primitives from a sample node sit in two fans, the reverse-gear
-fan on the left and the forward-gear fan on the right. Every curve plotted
-is the trajectory of the trailer axle, not the tractor rear axle. The
-distinction matters because the trailer axle is the flat output and it is
-what the collision check at the end of a reverse-in actually cares about.
+fan on the left and the forward-gear fan on the right. Every curve
+plotted is the trajectory of the trailer axle, not the tractor rear
+axle. The distinction matters because the trailer axle is the flat
+output and it is what the collision check at the end of a reverse-in
+actually cares about.
 
 B. Heuristic and analytic shot
 
@@ -235,19 +256,19 @@ Two speed-up tricks worth stating for reproducibility, both standard in
 Hybrid A*.
 
 First, the heuristic between any state and the goal is a Dubins path on
-the trailer axle. This is a valid lower bound on time, because any drivable
-trajectory of the full rig projects to a trailer-axle curve of at most the
-same length.
+the trailer axle. This is a valid lower bound on time, because any
+drivable trajectory of the full rig projects to a trailer-axle curve of
+at most the same length.
 
-Second, every expansion attempts an analytic shot. A Dubins path from the
-current trailer-axle pose to the goal, pushed through the inverse
+Second, every expansion attempts an analytic shot. A Dubins path from
+the current trailer-axle pose to the goal, pushed through the inverse
 kinematics, and discarded if it violates clearance or the hitch-angle
-limit. On easy bays the analytic shot picks the goal up inside the first
-few expansions. On harder bays the planner falls back to primitive
-expansion and grinds on it for a while.
+limit. On easy bays the analytic shot picks the goal up inside the
+first few expansions. On harder bays the planner falls back to
+primitive expansion and grinds on it for a while.
 
-Node expansion, collision check and cost update are all vectorised. For a
-batch of ten primitives we evaluate the ODE across 60 time steps in a
+Node expansion, collision check and cost update are all vectorised. For
+a batch of ten primitives we evaluate the ODE across 60 time steps in a
 single numpy call, instead of ten Python loops. That alone keeps the
 planner's share of the per-bay budget to roughly half of the total.
 
@@ -274,91 +295,106 @@ program:
 
 With N = 24 and step length 0.4 s, the horizon is 9.6 s. That works out
 to roughly twice the hitch-instability doubling time at 1 m/s, which is
-the shortest horizon that still corrects disturbances before they can grow
-into jackknife territory. Shorter horizons we tried caught four out of
-five reverse bays. The fifth folded.
+the shortest horizon that still corrects disturbances before they can
+grow into jackknife territory. Shorter horizons we tried caught four
+out of five reverse bays. The fifth folded.
 
-The decision variables are not the 24 individual steering angles. We block
-the horizon into eight piecewise-constant segments of three steps each,
-dropping the degree of freedom from 24 to 8. Cost weights:
-Q = diag(10, 10, 2, 20), R = 1, S = 10. The hitch weight is deliberately
-higher than the position weights, because when the controller is forced
-to choose, we prefer a straighter rig to a slightly tighter trajectory.
+The decision variables are not the 24 individual steering angles. We
+block the horizon into eight piecewise-constant segments of three steps
+each (N_B = 8, block length N/N_B = 3), dropping the degree of freedom
+from 24 to 8.
 
-X_ref is defined on the trailer axle. The speed profile v_k comes from
-the planner (ramp-up, cruise, ramp-down per segment); it is not a
-decision variable at the control step. Clearance uses a signed-distance
-function over the yard geometry, evaluated at every covering disc of the
-rig footprint. We set c_min = 0.10 m.
+Weights (from sim/tracker.py). Stage cost per step: trailer position
+0.6, trailer heading 1.5, hitch angle psi 15.0, tractor position 0.15,
+tractor heading 0.3. Terminal cost at k + N: trailer position 8.0,
+trailer heading 60.0, hitch angle 60.0, tractor position 1.0. Steering
+penalty R = 0.02, steering-rate penalty S = 3.0. The hitch weight
+dominates by design, because when the controller is forced to trade
+off cost terms we prefer a straighter rig over a slightly tighter
+trajectory.
+
+X_ref is defined on the trailer axle, which is why the dominant stage
+weights sit on the trailer-axle pose and on psi. The tractor-axle pose
+carries lower weight because, under reverse motion, the tractor rear
+axle is the non-minimum-phase output of the chain. The speed profile
+v_k comes from the planner (ramp-up, cruise, ramp-down per segment);
+it is not a decision variable at the control step, and respects
+v_fwd <= 2.2 m/s, |v_rev| <= 1.2 m/s. Clearance uses a signed-distance
+function over the yard geometry, evaluated at every covering disc of
+the rig footprint. The NMPC maintains an inner margin of
+c_min = 0.25 m; the final certification criterion is tighter again,
+requiring 0.10 m between any corner of the rig and any obstacle.
 
 B. Solver and warm start
 
-We solve the NLP with scipy.optimize.minimize using the SLSQP method and
-its finite-difference Jacobian estimator. SLSQP is not the fastest NLP
-solver out there. It is good enough for our horizon size, it handles the
-equality and inequality mix without pulling in external dependencies, and
-it tends to converge in two to five iterations per control step. Each
-solve is warm-started from the previous step's optimum, shifted by one
-step and extrapolated at the tail.
+We solve the NLP with scipy.optimize.minimize using the SLSQP method
+and its finite-difference Jacobian estimator. SLSQP is not the fastest
+NLP solver out there. It is good enough for our horizon size, it
+handles the equality and inequality mix without pulling in external
+dependencies, and it tends to converge in two to five iterations per
+control step. Each solve is warm-started from the previous step's
+optimum, shifted by one step and extrapolated at the tail.
 
 C. Batched Jacobian
 
 The finite-difference Jacobian is batched. A naive implementation would
-simulate the horizon once per gradient evaluation, then simulate it again
-with each of the eight inputs perturbed by the forward-difference step
-(1.49e-8, the numpy default). Nine horizon rollouts per Jacobian call,
-inside every line search. That does not fit a 250 ms control budget on a
-laptop sharing cycles with the viewer.
+simulate the horizon once per gradient evaluation, then simulate it
+again with each of the eight inputs perturbed by the forward-difference
+step (1.49e-8, the numpy default). Nine horizon rollouts per Jacobian
+call, inside every line search. That does not fit a 250 ms control
+budget on a laptop sharing cycles with the viewer.
 
-Our batched form (model.step_batch) pushes a (9, 4) array of states and a
-(9,) array of inputs through RK4 in a single call. The cost, hitch-limit
-constraints, steering-rate constraint and clearance constraint all reduce
-to numpy operations on the resulting (9, N+1, 4) tensor. For a single
-line-search probe we fall back to the plain-Python RK4, which is actually
-faster when it is just one trajectory. Average solve time comes out to
-about 12 ms, well inside the control period.
+Our batched form (model.step_batch) pushes a (9, 4) array of states
+and a (9,) array of inputs through RK4 in a single call. The cost,
+hitch-limit constraints, steering-rate constraint and clearance
+constraint all reduce to numpy operations on the resulting
+(9, N+1, 4) tensor. For a single line-search probe we fall back to the
+plain-Python RK4, which is actually faster when it is just one
+trajectory. Average solve time comes out to about 12 ms, well inside
+the control period.
 
 D. Clipping the horizon at the end of a segment
 
-The prediction horizon is clipped at the end of the planned segment. Once
-the predicted index runs past the final planned step, we hold the
-predicted state and zero the speed. Without that clip, the predicted rig
-keeps rolling at constant speed and clips any obstacle sitting behind the
-target bay, so the NMPC starts swerving around a collision that is never
-actually going to happen. The guard lives in tracker.py as STOP_AT_END.
-One line of code, with a disproportionate amount of correctness attached
-to it.
+The prediction horizon is clipped at the end of the planned segment.
+Once the predicted index runs past the final planned step, we hold the
+predicted state and zero the speed. Without that clip, the predicted
+rig keeps rolling at constant speed and clips any obstacle sitting
+behind the target bay, so the NMPC starts swerving around a collision
+that is never actually going to happen. The guard lives in tracker.py
+as STOP_AT_END. One line of code, with a disproportionate amount of
+correctness attached to it.
 
 
 ================================================================================
 VI. SECOND-ATTEMPT LADDER AND CERTIFICATION
 ================================================================================
 
-Real drivers who end up crooked, or too close to a neighbour, stop, pull
-forward, and have another go. We encoded that behaviour in the solver as
-a ladder of attempts (sim/export.py). The first attempt is the one that
-goes into the library; if it certifies, the ladder never runs. If it does
-not, the solver works through the ladder in order:
+Real drivers who end up crooked, or too close to a neighbour, stop,
+pull forward, and have another go. We encoded that behaviour in the
+solver as a ladder of attempts (sim/export.py). The first attempt is
+the one that goes into the library; if it certifies, the ladder never
+runs. If it does not, the solver works through the ladder in order:
 
-1. Pull forward from the stopped pose and re-plan into the bay, up to two
-   more legs.
-2. If a predicted collision is imminent, stop early at 0.15 m clearance
-   and continue from there.
+1. Pull forward from the stopped pose and re-plan into the bay, up to
+   two more legs.
+2. If a predicted collision is imminent, stop early at 0.15 m
+   clearance and continue from there.
 3. Re-plan from the gate with a gentler search weight and a larger
-   clearance margin, each option followed by the pull-forward recovery.
+   clearance margin, each option followed by the pull-forward
+   recovery.
 
-Budget: 300 s of wall-clock solving per bay. Nothing in the certification
-is loosened. The whole chain of legs still has to pass the same tests:
-parked inside 0.8 m of the target position, within 10 deg of the target
-tractor heading, within 12 deg of the target trailer heading, hitch angle
-never above 60 deg, no corner of the rig closer than 0.10 m to any
-obstacle. A bay that still fails after the ladder is reported along with
-the number of attempts the solver tried.
+Budget: 300 s of wall-clock solving per bay. Nothing in the
+certification is loosened. The whole chain of legs still has to pass
+the same tests: parked inside 0.8 m of the target position, within
+10 deg of the target tractor heading, within 12 deg of the target
+trailer heading, hitch angle never above 60 deg, no corner of the rig
+closer than 0.10 m to any obstacle. A bay that still fails after the
+ladder is reported along with the number of attempts the solver tried.
 
-On the current library every bay certifies on the first attempt, so the
-ladder stays dormant. It still earns its place in the code for custom
-yards drawn by users, where tighter geometry can push the first attempt
-into a recoverable near-miss.
+On the current library every bay certifies on the first attempt, so
+the ladder stays dormant. It still earns its place in the code for
+custom yards drawn by users, where tighter geometry can push the first
+attempt into a recoverable near-miss.
 
 
 ================================================================================
@@ -366,27 +402,27 @@ VII. IMPLEMENTATION
 ================================================================================
 
 Backend: pure Python 3.10 upward, with numpy and scipy as the only
-scientific dependencies. Every module in sim/ is importable in isolation
-and comes in under a few hundred lines. The server (server.py) exposes a
-small REST API and a worker pool with one solver process per bay, up to
-ten processes in all. We pin BLAS to one thread per process in
-sim/__init__.py. Without that pin, twenty numpy processes on a 16-core
-machine exhaust the Windows commit limit and the whole pool stalls. An
-afternoon to track down. Ten seconds to fix.
+scientific dependencies. Every module in sim/ is importable in
+isolation and comes in under a few hundred lines. The server
+(server.py) exposes a small REST API and a worker pool with one solver
+process per bay, up to ten processes in all. We pin BLAS to one thread
+per process in sim/__init__.py. Without that pin, twenty numpy
+processes on a 16-core machine exhaust the Windows commit limit and
+the whole pool stalls. An afternoon to track down. Ten seconds to fix.
 
 Viewer: Vite with React and Three.js. The yard is drawn in 3-D, with a
 top-down overlay for the plan view. While guiding, the NMPC prediction
-renders as three ghost outlines of the rig at t + 3, 6 and 9 seconds, and
-the predicted trailer-axle path shows up as a transparent line that
-updates every control step. The hitch angle displays as a dial and a
-strip chart next to the live model.
+renders as three ghost outlines of the rig at t + 3, 6 and 9 seconds,
+and the predicted trailer-axle path shows up as a transparent line
+that updates every control step. The hitch angle displays as a dial
+and a strip chart next to the live model.
 
-The system also ships with a yard editor (drag bays and obstacles, draw
-rectangular walls, resize the yard, save and load as JSON) and a live-NMPC
-endpoint (/api/live) that runs the controller on the server at wall-clock
-pace. The endpoint accepts a +-10 degree disturbance on the hitch at any
-moment, so an operator can watch the controller catch a sudden
-perturbation and keep driving.
+The system also ships with a yard editor (drag bays and obstacles,
+draw rectangular walls, resize the yard, save and load as JSON) and a
+live-NMPC endpoint (/api/live) that runs the controller on the server
+at wall-clock pace. The endpoint accepts a +-10 degree disturbance on
+the hitch at any moment, so an operator can watch the controller catch
+a sudden perturbation and keep driving.
 
 
 ================================================================================
@@ -395,16 +431,17 @@ VIII. RESULTS
 
 A. Per-bay timing
 
-Three reference bays from our progress reviews. Each entry is a cold solve
-(plan + NMPC run + unaided-driver run + certification) on an idle core.
+Three reference bays from our progress reviews. Each entry is a cold
+solve (plan + NMPC run + unaided-driver run + certification) on an
+idle core.
 
     Scenario                        Total solve   NMPC per step
     Cross,    fill 1, bay 6         5.2 s         11.9 ms
     Angled,   fill 1, bay 6         12.7 s        13.8 ms
     Parallel, fill 1, bay 2         15.0 s        14.7 ms
 
-Solving the whole 110-bay library takes around 3 minutes on a sixteen-core
-desktop.
+Solving the whole 110-bay library takes around 3 minutes on a
+sixteen-core desktop.
 
 B. Certification against the regression library
 
@@ -422,11 +459,11 @@ Summary numbers across every bay in the 110-bay library.
 C. Baseline comparison
 
 Two baselines. First, a plain geometric tracker that follows the
-Hybrid A* reference with pure-pursuit on the tractor rear axle, with no
-awareness of psi. Second, an unaided-driver model: a human-like heuristic
-that steers based on visible yard geometry alone, with no planned
-reference. Headline numbers on the 60 reverse-in bays of the library
-(cross and parallel layouts):
+Hybrid A* reference with pure-pursuit on the tractor rear axle, with
+no awareness of psi. Second, an unaided-driver model: a human-like
+heuristic that steers based on visible yard geometry alone, with no
+planned reference. Headline numbers on the 60 reverse-in bays of the
+library (cross and parallel layouts):
 
     Metric                                NMPC    Pure pursuit   Unaided
     Reverse bays completed                60/60   11/60          0/60
@@ -434,24 +471,25 @@ reference. Headline numbers on the 60 reverse-in bays of the library
     Mean peak |psi| when completed        36 deg  58 deg         ---
 
 Neither baseline is failing because of poor tuning. Both are failing
-because they do not know reversing is unstable. Pure-pursuit treats the
-hitch as a passive observer and lets psi do whatever the geometry forces,
-and on 49 out of 60 reverse bays what the geometry forces is a jackknife.
-The unaided model does worse again: it folds every rig it ever reverses.
-Our NMPC finishes all 60 with a mean peak |psi| of 36 degrees, well below
-the 60-degree limit, which leaves headroom for disturbances. We checked
-that headroom by injecting +-10 degree pulses on the hitch during the
-live-NMPC endpoint. Every pulse was caught inside three control steps.
+because they do not know reversing is unstable. Pure-pursuit treats
+the hitch as a passive observer and lets psi do whatever the geometry
+forces, and on 49 out of 60 reverse bays what the geometry forces is
+a jackknife. The unaided model does worse again: it folds every rig it
+ever reverses. Our NMPC finishes all 60 with a mean peak |psi| of 36
+degrees, well below the 60-degree limit, which leaves headroom for
+disturbances. We checked that headroom by injecting +-10 degree pulses
+on the hitch during the live-NMPC endpoint. Every pulse was caught
+inside three control steps.
 
 D. Representative run
 
-A certified plan for a cross-layout reverse-in bay (fill 1, bay 6). The
-same run we used throughout the progress reviews. The planner finds the
-route in 3.1 s. The closed-loop drive takes 47 s of simulated time. The
-NMPC fires 388 times. Peak |psi| is 40.4 degrees. The rig parks 0.58 m
-and 4.7 degrees off the target pose, well inside the certification
-tolerance. The unaided-driver baseline, started from the same pose,
-jackknifes at 56.9 s of simulated time.
+A certified plan for a cross-layout reverse-in bay (fill 1, bay 6).
+The same run we used throughout the progress reviews. The planner
+finds the route in 3.1 s. The closed-loop drive takes 47 s of
+simulated time. The NMPC fires 388 times. Peak |psi| is 40.4 degrees.
+The rig parks 0.58 m and 4.7 degrees off the target pose, well inside
+the certification tolerance. The unaided-driver baseline, started from
+the same pose, jackknifes at 56.9 s of simulated time.
 
 
 ================================================================================
@@ -460,113 +498,91 @@ IX. LIMITATIONS
 
 A few honest ones.
 
-Kinematic model only. We assume no slip at every wheel, which at parking
-speeds holds to a few centimetres, inside our 0.10 m clearance margin. On
-ice, at highway speeds, or with a heavily off-centre load, the kinematic
-model under-predicts psi. Swapping in a dynamic model is not blocked by
-anything in the architecture; the planner primitives and the NMPC cost
-both just need the new f.
+Kinematic model only. We assume no slip at every wheel, which at
+parking speeds holds to a few centimetres, inside our 0.10 m clearance
+margin. On ice, at highway speeds, or with a heavily off-centre load,
+the kinematic model under-predicts psi. Swapping in a dynamic model is
+not blocked by anything in the architecture; the planner primitives
+and the NMPC cost both just need the new f.
 
 Generous aisles. The library bays are sized around a standard DOT rig.
-We ran a quick stress test with a long-haul vehicle preset (L2 = 12 m),
-and the planner wanted roughly twice the aisle width to find a feasible
-route. We did not retune the primitives for unusually long trailers. A
-shorter time horizon or a finer primitive set is probably what is needed
-there.
+We ran a quick stress test with a long-haul vehicle preset
+(L2 = 12 m), and the planner wanted roughly twice the aisle width to
+find a feasible route. We did not retune the primitives for unusually
+long trailers. A shorter time horizon or a finer primitive set is
+probably what is needed there.
 
-Single-user demo server. The server runs on 127.0.0.1, with a pool of up
-to ten solver processes. A real production system would want a proper
-work queue, cancellation on client disconnect, and resource accounting.
-None of that is deep. It is just not what the project was aiming at.
+Single-user demo server. The server runs on 127.0.0.1, with a pool of
+up to ten solver processes. A real production system would want a
+proper work queue, cancellation on client disconnect, and resource
+accounting. None of that is deep. It is just not what the project was
+aiming at.
 
 
 ================================================================================
 X. CONCLUSION
 ================================================================================
 
-The engineering question the project started with was pretty concrete. Can
-a laptop reverse-park a trailer reliably, into a tight bay, without
-jackknifing? The short answer, as long as one piece of physics gets its
-due respect, is yes. In reverse, the hitch angle has unstable open-loop
-dynamics with a doubling time measured in seconds. A planner whose
-primitives come from a closed-form regulator of psi keeps the search in
-the stable region. An NMPC with the hitch as a hard state constraint
-keeps the realised trajectory there as well. Put together, the two certify
-all 110 bays of our regression library on the first attempt. A plain
-geometric baseline, which ignores the instability entirely, folds 60 rigs
-out of 60.
+The engineering question the project started with was pretty concrete.
+Can a laptop reverse-park a trailer reliably, into a tight bay, without
+jackknifing? The short answer, as long as one piece of physics gets
+its due respect, is yes. In reverse, the hitch angle has unstable
+open-loop dynamics with a doubling time measured in seconds. A planner
+whose primitives come from a closed-form regulator of psi keeps the
+search in the stable region. An NMPC with the hitch as a hard state
+constraint keeps the realised trajectory there as well. Put together,
+the two certify all 110 bays of our regression library on the first
+attempt. A plain geometric baseline, which ignores the instability
+entirely, folds 60 rigs out of 60.
 
 The whole stack runs in Python with no scientific dependencies beyond
 numpy and scipy. It would run on a 2015 laptop without complaining.
 
 Three directions we would want to try next, in rough priority order.
 Receding-horizon re-planning first: drop the two-stage plan-then-track
-split and run Hybrid A* inside the control loop whenever the NMPC drifts
-outside a trust region. Double-pin dolly trailers next, because each extra
-pin adds another unstable mode, and the literature on those is thinner
-than it is for single-pin articulated rigs. And a learned residual on top
-of the kinematic model, to catch the dynamic effects we currently assume
-away.
+split and run Hybrid A* inside the control loop whenever the NMPC
+drifts outside a trust region. Double-pin dolly trailers next, because
+each extra pin adds another unstable mode, and the literature on those
+is thinner than it is for single-pin articulated rigs. And a learned
+residual on top of the kinematic model, to catch the dynamic effects
+we currently assume away.
 
 
 ================================================================================
 ACKNOWLEDGMENT
 ================================================================================
 
-We thank our course instructors for pushing us to replace a precomputed
-library with a live solver, and our semester-end reviewers for insisting
-on a baseline comparison that was less flattering to the controller than
-our original write-up.
+We thank our course instructors for pushing us to replace a
+precomputed library with a live solver, and our semester-end reviewers
+for insisting on a baseline comparison that was less flattering to the
+controller than our original write-up.
 
 
 ================================================================================
 REFERENCES
 ================================================================================
 
-[1]  L. E. Dubins, "On curves of minimal length with a constraint on average
-     curvature, and with prescribed initial and terminal positions and
-     tangents," American Journal of Mathematics, vol. 79, no. 3,
-     pp. 497-516, 1957.
+[1]  G. Alenchery et al., "Parking assistance for trailer-truck
+     transport vehicles using sensor fusion and motion planning,"
+     arXiv preprint arXiv:2605.02716, 2026.
 
-[2]  J.-P. Laumond (Ed.), Robot Motion Planning and Control, Lecture Notes
-     in Control and Information Sciences, vol. 229, Springer, Berlin, 1998.
+[2]  M. Beglini, T. Belvedere, L. Lanari, and G. Oriolo, "An
+     intrinsically stable MPC approach for anti-jackknifing control
+     of tractor-trailer vehicles," IEEE/ASME Transactions on
+     Mechatronics, vol. 27, no. 6, pp. 4417-4428, Dec. 2022.
 
-[3]  S. M. LaValle, Planning Algorithms, Cambridge University Press,
-     Cambridge, U.K., 2006.
+[3]  E. Kayacan, E. Kayacan, H. Ramon, and W. Saeys, "Robust
+     tube-based decentralized nonlinear model predictive control of
+     an autonomous tractor-trailer system," IEEE/ASME Transactions
+     on Mechatronics, vol. 20, no. 1, pp. 447-456, Feb. 2015.
 
-[4]  C. Altafini, "Some properties of the general n-trailer," International
-     Journal of Control, vol. 74, no. 4, pp. 409-424, 2001.
-
-[5]  P. Bolzern, R. M. DeSantis, and A. Locatelli, "The path-following
-     problem for a tractor with trailers," International Journal of
-     Control, vol. 71, no. 5, pp. 775-798, 1998.
-
-[6]  R. M. Murray and S. S. Sastry, "Nonholonomic motion planning: Steering
-     using sinusoids," IEEE Transactions on Automatic Control, vol. 38,
-     no. 5, pp. 700-716, May 1993.
-
-[7]  D. Dolgov, S. Thrun, M. Montemerlo, and J. Diebel, "Path planning for
-     autonomous vehicles in unknown semi-structured environments,"
-     International Journal of Robotics Research, vol. 29, no. 5,
-     pp. 485-501, 2010.
-
-[8]  M. Diehl, H. G. Bock, and J. P. Schloder, "A real-time iteration
-     scheme for nonlinear optimization in optimal feedback control,"
-     SIAM Journal on Control and Optimization, vol. 43, no. 5,
-     pp. 1714-1736, 2005.
-
-[9]  D. Q. Mayne, "Model predictive control: Recent developments and future
-     promise," Automatica, vol. 50, no. 12, pp. 2967-2986, 2014.
-
-[10] J. T. Betts, Practical Methods for Optimal Control Using Nonlinear
-     Programming, SIAM, Philadelphia, PA, 2001.
-
-[11] Group B9, "Tractor-trailer parking: the kinematic model," project
+[4]  "Tractor-trailer parking: the kinematic model," project
      reference document, doc/tractor-trailer-kinematics.md, 2026.
 
-[12] E. You et al., "Vite: Next generation frontend tooling," Software.
-     Available: https://vitejs.dev
+[5]  E. You et al., "Vite: Next generation frontend tooling,"
+     Software. Available: https://vitejs.dev
 
-[13] Meta Open Source, "React," Software. Available: https://react.dev
+[6]  Meta Open Source, "React," Software. Available: https://react.dev
 
-[14] R. Cabello et al., "Three.js," Software. Available: https://threejs.org
+[7]  R. Cabello et al., "Three.js," Software. Available:
+     https://threejs.org

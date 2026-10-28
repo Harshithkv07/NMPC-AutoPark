@@ -8,3 +8,6 @@ dist/
 # first-review source documents: kept on this machine only (the old deck embeds a third-party video)
 doc/Robotics SEM3.pptx
 doc/New Microsoft Word Document.docx
+
+# compiled IEEE report (the final submission PDF lives at doc/AIDB TEAM B9.pdf)
+doc/ieee-report/report.pdf

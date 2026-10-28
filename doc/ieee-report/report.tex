@@ -113,36 +113,42 @@ is the whole scientific stack.
 
 \section{Related Work}
 
-Dubins \cite{Dubins1957} is the reference everyone starts with for
-shortest paths of a car with bounded curvature. Laumond's edited volume
-\cite{Laumond1998} and LaValle's textbook \cite{LaValle2006} give the
-wider treatment of nonholonomic motion planning, including the
-chained-form view of the general $n$-trailer. Altafini
-\cite{Altafini2001} and Bolzern \textit{et al.} \cite{Bolzern1998} sit
-closer to the specific kinematics we actually use.
+Three papers frame what we built.
 
-Murray and Sastry \cite{MurraySastry1993} proved in 1993 that chained-form
-systems are controllable with periodic steering. We never used their
-steering law. We cite them because the local reachability question would
-otherwise have to be argued from scratch, and a reviewer is going to ask.
+Alenchery \textit{et al.} \cite{Alenchery2026} is the closest match to
+our problem. The preprint proposes the exact pipeline we settled on,
+sensor fusion feeding Hybrid A$^{*}$, then NMPC for the trailer, with
+LQR for low-level actuation. In the paper itself only the Hybrid A$^{*}$
+and a B-spline smoother are actually implemented; the NMPC and LQR
+stages are described but never coded, and the reported closed-loop runs
+jackknife on the harder reverse bays. We take that as our starting
+point: build the NMPC stage the preprint omits, impose the hitch-angle
+limit the preprint lacks, and run the whole thing closed-loop.
 
-The planner side is Hybrid A$^{*}$ in the sense of Dolgov \textit{et al.}
-\cite{Dolgov2010}. Our twist sits in the choice of primitives. Rather
-than a fixed set of circular arcs with discretised steering, we
-parametrise each primitive by a target hitch angle
-$\psi_{\mathrm{des}} \in \{-45^{\circ}, -25^{\circ}, 0^{\circ},
-+25^{\circ}, +45^{\circ}\}$, then derive the steering input in closed
-form. In reverse that derivation behaves as a one-step feedback regulator
-and keeps the planner inside the feasible region.
+Beglini \textit{et al.} \cite{Beglini2022} come at the hitch-angle
+problem from the control side. They design an intrinsically stable MPC
+(IS-MPC) for a tractor--trailer that follows a given reference path and
+guarantees $|\psi|$ stays bounded, even in reverse. The paper handles no
+planning, no obstacles, and no parking manoeuvre. We treat it as the
+anti-jackknifing invariant we want to preserve, then push the scope
+outward: our NMPC enforces the same hitch-angle constraint while
+tracking a Hybrid A$^{*}$ plan through a yard full of parked trucks.
 
-Mayne's 2014 survey \cite{Mayne2014} remains the shortest useful pointer
-to real-time MPC. The algorithmic machinery we lean on, SQP applied to
-the discretised single-shooting problem with finite-difference gradients,
-follows Betts \cite{Betts2001} and the real-time iteration framework of
-Diehl \textit{et al.} \cite{Diehl2005}. We used SciPy's \texttt{SLSQP}
-straight out of the box. It handled our horizon size without fuss. Adding
-a dedicated QP solver to the dependency list felt like extra ceremony for
-no clear win.
+Kayacan \textit{et al.} \cite{Kayacan2015} is the agricultural reference.
+Their tube-based decentralised NMPC drives an autonomous tractor pulling
+a trailed implement along crop rows for field work; the reported
+cross-track accuracy in straight sections is 5--8 cm. The paper
+establishes what tractor--trailer MPC accuracy is reasonable to expect
+in open terrain, which is the benchmark we use to interpret our own
+7.95 cm and 5.42 cm straight-line errors in the parking context.
+
+The three papers partition the space neatly. Alenchery brings the
+pipeline but leaves the controller unbuilt. Beglini brings the
+hitch-stable controller but leaves out planning and the yard. Kayacan
+brings the field accuracy benchmark but not the on-road parking task.
+Our contribution sits at the intersection: Alenchery's pipeline, with
+Beglini's hitch guarantee, benchmarked against Kayacan's accuracy
+regime, applied to on-road reverse parking into a tight yard.
 
 \section{System Model}
 \label{sec:model}
@@ -213,8 +219,8 @@ the feasible region whether the dynamics want to drift or not.
 
 \subsection{Flat output}
 
-The trailer axle position is a differentially flat output of the system
-\cite{LaValle2006}. Any smooth trailer-axle trajectory $(x_T(t), y_T(t))$
+The trailer axle position is a differentially flat output of the
+system. Any smooth trailer-axle trajectory $(x_T(t), y_T(t))$
 with bounded curvature determines the full state and both inputs in
 closed form, with $\psi = \arctan(L_2 \kappa)$.
 
@@ -345,17 +351,32 @@ bays. The fifth folded.
 
 The decision variables are not the 24 individual steering angles. We
 block the horizon into eight piecewise-constant segments of three steps
-each, dropping the degree of freedom from 24 to 8. Cost weights:
-$Q = \mathrm{diag}(10, 10, 2, 20)$, $R = 1$, $S = 10$. The hitch weight
-is deliberately higher than the position weights, because when the
-controller is forced to choose, we prefer a straighter rig to a slightly
-tighter trajectory.
+each ($N_B = 8$, block length $N / N_B = 3$), dropping the degree of
+freedom from 24 to 8.
 
-$X^{\mathrm{ref}}$ is defined on the trailer axle. The speed profile
-$v_k$ comes from the planner (ramp-up, cruise, ramp-down per segment); it
-is not a decision variable at the control step. Clearance uses a
+Weights (from \texttt{sim/tracker.py}). Stage cost per step: trailer
+position \num{0.6}, trailer heading \num{1.5}, hitch angle $\psi$
+\num{15.0}, tractor position \num{0.15}, tractor heading \num{0.3}.
+Terminal cost at $k + N$: trailer position \num{8.0}, trailer heading
+\num{60.0}, hitch angle \num{60.0}, tractor position \num{1.0}.
+Steering penalty $R = \num{0.02}$, steering-rate penalty $S = \num{3.0}$.
+The hitch weight dominates by design, because when the controller is
+forced to trade off cost terms we prefer a straighter rig over a
+slightly tighter trajectory.
+
+$X^{\mathrm{ref}}$ is defined on the trailer axle, which is why the
+dominant stage weights sit on the trailer-axle pose and on $\psi$. The
+tractor-axle pose carries lower weight because, under reverse motion,
+the tractor rear axle is the non-minimum-phase output of the chain.
+The speed profile $v_k$ comes from the planner (ramp-up, cruise,
+ramp-down per segment); it is not a decision variable at the control
+step, and respects $v_{\mathrm{fwd}} \le \SI{2.2}{\meter\per\second}$,
+$|v_{\mathrm{rev}}| \le \SI{1.2}{\meter\per\second}$. Clearance uses a
 signed-distance function over the yard geometry, evaluated at every
-covering disc of the rig footprint. We set $c_{\min} = \SI{0.10}{\meter}$.
+covering disc of the rig footprint. The NMPC maintains an inner margin
+of $c_{\min} = \SI{0.25}{\meter}$; the final certification criterion is
+tighter again, requiring \SI{0.10}{\meter} between any corner of the
+rig and any obstacle.
 
 \subsection{Solver and warm start}
 
@@ -617,20 +638,13 @@ on a baseline comparison that was less flattering to the controller than
 our original write-up.
 
 \begin{thebibliography}{00}
-\bibitem{Dubins1957} L.~E. Dubins, ``On curves of minimal length with a constraint on average curvature, and with prescribed initial and terminal positions and tangents,'' \textit{American Journal of Mathematics}, vol.~79, no.~3, pp.~497--516, 1957.
-\bibitem{Laumond1998} J.-P. Laumond (Ed.), \textit{Robot Motion Planning and Control}, Lecture Notes in Control and Information Sciences, vol.~229. Berlin: Springer, 1998.
-\bibitem{LaValle2006} S.~M. LaValle, \textit{Planning Algorithms}. Cambridge, U.K.: Cambridge Univ. Press, 2006, ch.~13.
-\bibitem{Altafini2001} C.~Altafini, ``Some properties of the general $n$-trailer,'' \textit{International Journal of Control}, vol.~74, no.~4, pp.~409--424, 2001.
-\bibitem{Bolzern1998} P.~Bolzern, R.~M. DeSantis, and A.~Locatelli, ``The path-following problem for a tractor with trailers,'' \textit{International Journal of Control}, vol.~71, no.~5, pp.~775--798, 1998.
-\bibitem{MurraySastry1993} R.~M. Murray and S.~S. Sastry, ``Nonholonomic motion planning: Steering using sinusoids,'' \textit{IEEE Trans. Autom. Control}, vol.~38, no.~5, pp.~700--716, May 1993.
-\bibitem{Dolgov2010} D.~Dolgov, S.~Thrun, M.~Montemerlo, and J.~Diebel, ``Path planning for autonomous vehicles in unknown semi-structured environments,'' \textit{International Journal of Robotics Research}, vol.~29, no.~5, pp.~485--501, 2010.
-\bibitem{Diehl2005} M.~Diehl, H.~G. Bock, and J.~P. Schl\"{o}der, ``A real-time iteration scheme for nonlinear optimization in optimal feedback control,'' \textit{SIAM Journal on Control and Optimization}, vol.~43, no.~5, pp.~1714--1736, 2005.
-\bibitem{Mayne2014} D.~Q. Mayne, ``Model predictive control: Recent developments and future promise,'' \textit{Automatica}, vol.~50, no.~12, pp.~2967--2986, 2014.
-\bibitem{Betts2001} J.~T. Betts, \textit{Practical Methods for Optimal Control Using Nonlinear Programming}. Philadelphia, PA: SIAM, 2001.
+\bibitem{Alenchery2026} G.~Alenchery \textit{et al.}, ``Parking assistance for trailer-truck transport vehicles using sensor fusion and motion planning,'' \textit{arXiv preprint arXiv:2605.02716}, 2026.
+\bibitem{Beglini2022} M.~Beglini, T.~Belvedere, L.~Lanari, and G.~Oriolo, ``An intrinsically stable MPC approach for anti-jackknifing control of tractor--trailer vehicles,'' \textit{IEEE/ASME Transactions on Mechatronics}, vol.~27, no.~6, pp.~4417--4428, Dec. 2022.
+\bibitem{Kayacan2015} E.~Kayacan, E.~Kayacan, H.~Ramon, and W.~Saeys, ``Robust tube-based decentralized nonlinear model predictive control of an autonomous tractor--trailer system,'' \textit{IEEE/ASME Transactions on Mechatronics}, vol.~20, no.~1, pp.~447--456, Feb. 2015.
 \bibitem{ReportCodeKinematics} ``Tractor--trailer parking: the kinematic model,'' project reference document, \texttt{doc/tractor-trailer-kinematics.md}, 2026.
-\bibitem{Vite} E. You \textit{et al.}, ``Vite: Next generation frontend tooling,'' Software, [Online]. Available: \url{https://vitejs.dev}
+\bibitem{Vite} E.~You \textit{et al.}, ``Vite: Next generation frontend tooling,'' Software, [Online]. Available: \url{https://vitejs.dev}
 \bibitem{React} Meta Open Source, ``React,'' Software, [Online]. Available: \url{https://react.dev}
-\bibitem{ThreeJS} R. Cabello \textit{et al.}, ``Three.js,'' Software, [Online]. Available: \url{https://threejs.org}
+\bibitem{ThreeJS} R.~Cabello \textit{et al.}, ``Three.js,'' Software, [Online]. Available: \url{https://threejs.org}
 \end{thebibliography}
 
 \end{document}
